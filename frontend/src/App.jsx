@@ -2,9 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import './App.css'; // We'll create this file for styling
+import './App.css';
 
-// Define the backend API URL
 const API_URL = 'http://127.0.0.1:8000';
 
 function App() {

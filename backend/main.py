@@ -1,8 +1,7 @@
 # backend/main.py
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from langchain_huggingface import HuggingFaceEmbeddings, HuggingFacePipeline
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from langchain_huggingface import HuggingFaceEmbeddings
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import tempfile
@@ -19,14 +18,12 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 
-# Load environment variables
+
 load_dotenv()
 
-# --- Initialize FastAPI App ---
 app = FastAPI()
 
 # --- CORS Middleware ---
-# This allows your React frontend (running on a different port) to communicate with this backend.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],  # Adjust this to your React app's URL
@@ -43,7 +40,6 @@ rag_chain = None
 class QueryRequest(BaseModel):
     query: str
 
-# --- LangChain RAG Logic (from previous guide, adapted for API) ---
 def create_rag_chain_from_pdf(pdf_file_path: str):
     """Creates the RAG chain from a PDF file path."""
     try:

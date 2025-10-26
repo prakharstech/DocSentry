@@ -138,11 +138,10 @@ The backend requires the following environment variable to be set in the `backen
 
 ## 🔮 Potential Improvements
 
-* **Implement FAISS Persistence**: Modify the backend code to save/load FAISS indexes to disk to avoid reprocessing PDFs (as demonstrated in previous conversation steps).
+* **Implement FAISS Persistence**: Modify the backend code to save/load FAISS indexes to disk to avoid reprocessing PDFs.
 * **Support More File Types**: Extend functionality to support `.docx`, `.txt`, `.csv`, etc. using different LangChain document loaders.
 * **Highlighting Results**: Modify the frontend to highlight the detected sensitive data within the retrieved context.
 * **Alternative Models/Embeddings**: Allow swapping Mistral API with local Hugging Face models or different vector stores (like ChromaDB).
-* **Enhanced Error Handling**: Provide more specific feedback to the user on the frontend if backend processes fail.
 * **Security**: Implement user authentication and authorization if deploying in a multi-user environment.
 * **Scalability**: For larger documents or higher traffic, consider a more scalable vector database and potentially asynchronous processing for uploads.
 

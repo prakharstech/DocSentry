@@ -1,6 +1,6 @@
 # DocSentry 🕵️
 
-**DocSentry** is a web application designed to detect sensitive data within PDF documents using a Retrieval-Augmented Generation (RAG) approach. This project was developed as part of the Information Security Lab curriculum. It is powered by LangChain, Mistral AI, and local embeddings, providing a user-friendly interface to upload documents and query for specific types of confidential information.
+**DocSentry** is a web application designed to detect sensitive data within PDF documents using a Retrieval-Augmented Generation (RAG) approach. This project was developed as part of the Information Security Lab curriculum. It is powered by LangChain, OpenAI, and local embeddings, providing a user-friendly interface to upload documents and query for specific types of confidential information.
 
 
 
@@ -20,9 +20,9 @@
 * **Custom Sensitive Data Queries**: Define the type of sensitive data you want to detect via natural language prompts (e.g., "Find all Social Security Numbers", "Detect API keys").
 * **RAG Pipeline**:
     * Uses **LangChain** for orchestration.
-    * Embeds document chunks locally using **Hugging Face Sentence Transformers** (`all-MiniLM-L6-v2`).
+    * Creates document embeddings using **OpenAI Embeddings**.
     * Stores embeddings locally using **FAISS**. (Note: The current code does not implement persistence, embeddings are in-memory).
-    * Leverages **Mistral AI's API** (`mistral-large-latest` model) for analyzing retrieved context and identifying sensitive information.
+    * Leverages **OpenAI API** for analyzing retrieved context and identifying sensitive information.
 * **Web Interface**: A clean React frontend for interaction.
 * **API Backend**: A robust FastAPI backend handling document processing and AI interactions.
 
@@ -35,7 +35,7 @@ DocSentry follows a standard client-server architecture:
 1.  **Frontend (React)**: Built with Vite, running in the user's browser. It handles file uploads and displays the chat interface. It communicates with the backend via HTTP requests (using Axios).
 2.  **Backend (FastAPI)**: A Python server that exposes API endpoints for:
     * `/upload`: Receiving PDFs, chunking text, generating embeddings (locally via Hugging Face), creating an in-memory FAISS index.
-    * `/query`: Receiving user prompts, retrieving relevant document chunks from the FAISS index, invoking the Mistral AI LLM via LangChain to get the answer.
+    * `/query`: Receiving user prompts, retrieving relevant document chunks from the FAISS index, invoking the OpenAI LLM via LangChain to get the answer.
 
 ---
 
@@ -45,7 +45,7 @@ Before you begin, ensure you have the following installed:
 
 * **Python**: Version 3.8 or higher.
 * **Node.js**: Version 18 or higher (for the React frontend). Includes `npm`.
-* **Mistral AI API Key**: You need an API key from [Mistral AI](https://console.mistral.ai/).
+* **OpenAI API Key**: You need an API key from [OpenAI](https://platform.openai.com/).
 
 ---
 
@@ -54,7 +54,7 @@ Before you begin, ensure you have the following installed:
 1.  **Clone the Repository**:
     ```bash
     git clone <your-repository-url>
-    cd DocSentry-eb2ed076f252b5d642aaff6edf31a6fc878e6066 # Or your project's root directory
+    cd DocSentry# Or your project's root directory
     ```
 
 2.  **Backend Setup**:
@@ -78,7 +78,7 @@ Before you begin, ensure you have the following installed:
         ```
     * Create a `.env` file in the `backend` directory:
         ```
-        MISTRAL_API_KEY="your-mistral-api-key-here"
+        OPENAI_API_KEY="your-openai-api-key-here"
         ```
         **Important**: Do *not* commit the `.env` file to version control. The `.gitignore` file should already be configured to prevent this.
 
@@ -132,7 +132,7 @@ You need to run both the backend and frontend servers simultaneously.
 
 The backend requires the following environment variable to be set in the `backend/.env` file:
 
-* `MISTRAL_API_KEY`: Your secret API key for accessing Mistral AI services.
+* `OPENAI_API_KEY`: Your secret API key for accessing OpenAI services.
 
 ---
 

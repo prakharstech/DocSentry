@@ -52,12 +52,13 @@ def create_rag_chain_from_pdf(pdf_file_path: str):
         document_chunks = text_splitter.split_documents(documents)
 
         # 3. Create a vector store
-        #embeddings = OpenAIEmbeddings()
-        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        embeddings = OpenAIEmbeddings()
+        #embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         vector_store = FAISS.from_documents(document_chunks, embeddings)
         
         # 4. Create the RAG chain
-        llm = ChatMistralAI(model="mistral-large-latest")
+        llm = ChatOpenAI(model="gpt-5")
+        #llm=ChatMistralAI(model="mistral-large-latest")
         prompt_template = """
         You are an expert AI assistant specialized in detecting sensitive data in documents.
         Analyze the provided context and identify any instances of the requested sensitive data type.

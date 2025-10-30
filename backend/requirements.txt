@@ -17,3 +17,4 @@ transformers
 accelerate
 bitsandbytes
 langchain-mistralai
+fitz

@@ -34,9 +34,8 @@ DocSentry follows a standard client-server architecture:
 
 1.  **Frontend (React)**: Built with Vite, running in the user's browser. It handles file uploads and displays the chat interface. It communicates with the backend via HTTP requests (using Axios).
 2.  **Backend (FastAPI)**: A Python server that exposes API endpoints for:
-    * `/upload`: Receiving PDFs, chunking text, generating embeddings (locally via Hugging Face), creating an in-memory FAISS index.
-    * `/query`: Receiving user prompts, retrieving relevant document chunks from the FAISS index, invoking the OpenAI LLM via LangChain to get the answer.
-
+    * `/upload`: Receiving PDFs, chunking text, generating embeddings (via OpenAI), creating an in-memory FAISS index.
+    * `/query`: Receiving user prompts, retrieving relevant document chunks from the FAISS index, invoking the OpenAI LLM (ChatGPT) via LangChain to get the answer.
 ---
 
 ## 📋 Prerequisites

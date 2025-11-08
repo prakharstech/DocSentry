@@ -3,10 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import tempfile, os, logging
 
-from core.loader import load_and_split_pdf
-from core.embedder import build_vector_store
-from core.rag_chain import create_rag_chain
-from core.analyzer import hybrid_analysis
+from backend.core.loader import load_and_split_pdf
+from backend.core.embedder import build_vector_store
+from backend.core.rag_chain import create_rag_chain
+from backend.core.analyzer import hybrid_analysis
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -16,7 +16,7 @@ app = FastAPI(title="DocSentry API", version="3.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174","https://doc-sentry.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,7 +1,6 @@
 langchain
 langchain-openai
 langchain_community
-streamlit
 pypdf
 faiss-cpu
 sentence-transformers
@@ -9,7 +8,6 @@ python-dotenv
 fastapi
 uvicorn
 python-multipart
-dotenv
 openai
 requests
 langchain-huggingface
@@ -17,3 +15,4 @@ transformers
 accelerate
 bitsandbytes
 langchain-mistralai
+langchain-text-splitters

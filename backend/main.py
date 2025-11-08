@@ -1,122 +1,85 @@
-# backend/main.py
-
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from langchain_huggingface import HuggingFaceEmbeddings
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import tempfile
-import os
+import tempfile, os, logging
+
+from core.loader import load_and_split_pdf
+from core.embedder import build_vector_store
+from core.rag_chain import create_rag_chain
+from core.analyzer import hybrid_analysis
+
 from dotenv import load_dotenv
-
-# LangChain imports
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_mistralai.chat_models import ChatMistralAI
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
-
-
 load_dotenv()
 
-app = FastAPI()
+logging.basicConfig(level=logging.INFO)
+app = FastAPI(title="DocSentry API", version="3.0")
 
-# --- CORS Middleware ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Adjust this to your React app's URL
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- In-memory storage for the RAG chain ---
-# For a real application, you'd use a more robust solution like Redis, a database, or session management.
-# For this demo, a simple global variable will work for a single user.
 rag_chain = None
+vector_store = None
+latest_text = ""
 
 class QueryRequest(BaseModel):
     query: str
 
-def create_rag_chain_from_pdf(pdf_file_path: str):
-    """Creates the RAG chain from a PDF file path."""
-    try:
-        # 1. Load the document
-        loader = PyPDFLoader(pdf_file_path)
-        documents = loader.load()
-
-        # 2. Split the document into chunks
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-        document_chunks = text_splitter.split_documents(documents)
-
-        # 3. Create a vector store
-        #embeddings = OpenAIEmbeddings()
-        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-        vector_store = FAISS.from_documents(document_chunks, embeddings)
-        
-        # 4. Create the RAG chain
-        llm = ChatMistralAI(model="mistral-large-latest")
-        prompt_template = """
-        You are an expert AI assistant specialized in detecting sensitive data in documents.
-        Analyze the provided context and identify any instances of the requested sensitive data type.
-
-        Answer the user's question based on the context below. If you find the requested data, list each instance clearly.
-        If you don't find any, state that no such data was found.
-
-        Context:
-        {context}
-
-        Question:
-        {input}
-
-        Identified Data:
-        """
-        prompt = ChatPromptTemplate.from_template(prompt_template)
-        stuff_chain = create_stuff_documents_chain(llm, prompt)
-        retriever = vector_store.as_retriever()
-        
-        return create_retrieval_chain(retriever, stuff_chain)
-    except Exception as e:
-        print(f"Error creating RAG chain: {e}")
-        return None
-
-# --- API Endpoints ---
 @app.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
-    """
-    Endpoint to upload a PDF. It processes the PDF and creates a RAG chain.
-    """
-    global rag_chain
+async def upload_pdf(file: UploadFile = File(...)):
+    global rag_chain, vector_store, latest_text
     if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are allowed.")
-    
-    # Use a temporary file to save the uploaded content
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        content = await file.read()
-        tmp_file.write(content)
-        tmp_file_path = tmp_file.name
+        raise HTTPException(status_code=400, detail="Only PDF files allowed.")
+
+    tmp_path = tempfile.mktemp(suffix=".pdf")
+    with open(tmp_path, "wb") as f:
+        f.write(await file.read())
 
     try:
-        rag_chain = create_rag_chain_from_pdf(tmp_file_path)
-        if rag_chain is None:
-            raise HTTPException(status_code=500, detail="Failed to process the document.")
-        return {"status": "success", "message": "Document processed successfully."}
+        chunks = load_and_split_pdf(tmp_path)
+        vector_store = build_vector_store(chunks)
+        rag_chain = create_rag_chain(vector_store)
+        latest_text = "\n".join([c.page_content for c in chunks])
+        logging.info(f"Document {file.filename} processed successfully.")
+        return {"status": "success", "message": "PDF processed successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
-        os.remove(tmp_file_path) # Clean up the temporary file
+        os.remove(tmp_path)
 
 @app.post("/query")
-async def handle_query(request: QueryRequest):
-    """
-    Endpoint to ask a question to the processed document.
-    """
-    global rag_chain
-    if rag_chain is None:
-        raise HTTPException(status_code=400, detail="No document has been processed yet. Please upload a PDF first.")
-
+async def query_doc(request: QueryRequest):
+    global rag_chain, latest_text
+    if not rag_chain:
+        raise HTTPException(status_code=400, detail="No document uploaded yet.")
     try:
-        response = rag_chain.invoke({"input": request.query})
-        return {"answer": response["answer"]}
+        llm_output = rag_chain.invoke(request.query)
+        result = hybrid_analysis(latest_text, llm_output)
+
+        # Format human-readable response for frontend
+        formatted_response = ""
+
+        # Pattern-based matches
+        if result["pattern_based"]:
+            formatted_response += "🧩 **Pattern-Based Detections:**\n"
+            for m in result["pattern_based"]:
+                formatted_response += f"- {m['type'].capitalize()}: `{m['value']}`\n"
+            formatted_response += "\n"
+
+        # Contextual (LLM) analysis
+        formatted_response += "🤖 **Contextual Analysis:**\n"
+        formatted_response += result["contextual_analysis"] or "No contextual findings."
+
+        return {"answer": formatted_response}
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/")
+async def root():
+    return {"message": "DocSentry v3.0 running"}

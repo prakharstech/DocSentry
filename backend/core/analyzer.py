@@ -1,4 +1,4 @@
-from core.utils import detect_pattern_based
+from .utils import detect_pattern_based
 import logging
 
 def hybrid_analysis(text, llm_response):

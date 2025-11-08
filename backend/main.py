@@ -3,10 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import tempfile, os, logging
 
-from backend.core.loader import load_and_split_pdf
-from backend.core.embedder import build_vector_store
-from backend.core.rag_chain import create_rag_chain
-from backend.core.analyzer import hybrid_analysis
+from core.loader import load_and_split_pdf
+from core.embedder import build_vector_store
+from core.rag_chain import create_rag_chain
+from core.analyzer import hybrid_analysis
 
 from dotenv import load_dotenv
 load_dotenv()
